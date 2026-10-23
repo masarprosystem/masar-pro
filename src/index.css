@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-tap-highlight-color: transparent; }
+  body { @apply bg-paper text-slate-800 font-sans antialiased dark:bg-[#0d1512] dark:text-slate-100; }
+  :focus-visible { @apply outline-none ring-2 ring-brand-500 ring-offset-1 ring-offset-transparent; }
+  input[type='number'] { -moz-appearance: textfield; }
+}
+
+@layer components {
+  .field {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition
+           focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 disabled:bg-slate-100 disabled:text-slate-500
+           dark:border-slate-700 dark:bg-[#121d19] dark:text-slate-100 dark:disabled:bg-slate-800;
+  }
+  .card { @apply rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#121d19]; }
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+.speed-lines {
+  background:
+    linear-gradient(currentColor, currentColor) right 0 top 0 / 70% 2px no-repeat,
+    linear-gradient(currentColor, currentColor) right 12% top 6px / 45% 2px no-repeat,
+    linear-gradient(currentColor, currentColor) right 4% top 12px / 58% 2px no-repeat;
+  height: 14px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pop { animation: pop 0.16s ease-out; }
+  @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: none; } }
+}
