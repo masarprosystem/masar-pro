@@ -83,7 +83,8 @@ src/
 4. **Staff**: staff profiles, attendance check-in/out (optional geolocation), commission rules + ledger, monthly staff payroll (fixed + commissions − absence).
 
 ## Conventions
-- SQL migrations in `supabase/migrations/NNN_name.sql`, idempotent, applied in order (001 foundation, 002 setup, 003 member email, 004 recruitment, 005 payroll).
+- SQL migrations in `supabase/migrations/NNN_name.sql`, idempotent, applied in order (001 foundation, 002 setup, 003 member email, 004 recruitment, 005 payroll, 006 staff).
+- Staff: attendance punches only via `attendance_punch` (Cairo time). Monthly staff pay is computed by `staff_month_summary`; paying snapshots it into `staff_payslips` via `staff_pay`. Commission qualification lives in `staff_qualified_hires` (rules: on_active / active_days / first_payroll).
 - Payroll writes (pay/unpay/link/import) go only through RPCs `payroll_import`, `payroll_pay`, `payroll_unpay`, `payroll_link`; HR role has no payroll access.
 - Spreadsheets are read with `read-excel-file` (xlsx) and `papaparse` (csv) via `src/core/sheets.ts`.
 - Image compression is implemented in `src/modules/recruitment/files.ts` (canvas → WebP/JPEG), no external worker/CDN.

@@ -7,7 +7,7 @@ import { Spinner } from '@/components/ui';
 import { AppLayout } from '@/layouts/AppLayout';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { LoginPage, NoAccessPage, ProfilePage, SetupMissingPage } from '@/pages/AuthPages';
-import { ComingSoon, HomePage, OfficeSettingsPage, SubscriptionPage, TeamPage } from '@/pages/app/OfficePages';
+import { HomePage, OfficeSettingsPage, SubscriptionPage, TeamPage } from '@/pages/app/OfficePages';
 // الصفحات الكبيرة بتتحمل وقت ما تتفتح بس، عشان أول فتح للموقع يبقى أسرع
 const AdminOfficesPage = lazy(() => import('@/pages/admin/AdminOfficesPage').then((m) => ({ default: m.AdminOfficesPage })));
 const AdminOfficeDetailPage = lazy(() => import('@/pages/admin/AdminOfficeDetailPage').then((m) => ({ default: m.AdminOfficeDetailPage })));
@@ -21,6 +21,11 @@ const RunPage = lazy(() => import('@/modules/payroll/RunPage').then((m) => ({ de
 const CustodyPage = lazy(() => import('@/modules/payroll/MoneyPages').then((m) => ({ default: m.CustodyPage })));
 const ExpensesPage = lazy(() => import('@/modules/payroll/MoneyPages').then((m) => ({ default: m.ExpensesPage })));
 const ReportPage = lazy(() => import('@/modules/payroll/ReportPage').then((m) => ({ default: m.ReportPage })));
+const StaffHome = lazy(() => import('@/modules/staff/StaffHome').then((m) => ({ default: m.StaffHome })));
+const AttendancePage = lazy(() => import('@/modules/staff/AttendancePage').then((m) => ({ default: m.AttendancePage })));
+const StaffPayrollPage = lazy(() => import('@/modules/staff/StaffPayrollPage').then((m) => ({ default: m.StaffPayrollPage })));
+const StaffSettingsPage = lazy(() => import('@/modules/staff/StaffSettingsPage').then((m) => ({ default: m.StaffSettingsPage })));
+const MemberPage = lazy(() => import('@/modules/staff/MemberPage').then((m) => ({ default: m.MemberPage })));
 const ImportPage = lazy(() => import('@/modules/recruitment/ImportPage').then((m) => ({ default: m.ImportPage })));
 import type { OfficeRole } from '@/core/types';
 
@@ -58,6 +63,11 @@ function RoleGuard({ deny, children }: { deny: OfficeRole[]; children: ReactNode
   return role && !deny.includes(role) && writable ? <>{children}</> : <Navigate to="/app/recruitment" replace />;
 }
 
+function Allow({ roles, children }: { roles: OfficeRole[]; children: ReactNode }) {
+  const { role } = useOffice();
+  return role && roles.includes(role) ? <>{children}</> : <Navigate to="/app/staff" replace />;
+}
+
 function HomeRedirect() {
   const { memberships, isPlatformAdmin } = useAuth();
   if (memberships.length) return <Navigate to="/app" replace />;
@@ -91,7 +101,13 @@ export default function App() {
           <Route path="expenses" element={<ExpensesPage />} />
           <Route path="report" element={<ReportPage />} />
         </Route>
-        <Route path="staff/*" element={<Guard area="staff"><ComingSoon module="staff" /></Guard>} />
+        <Route path="staff" element={<Guard area="staff"><Outlet /></Guard>}>
+          <Route index element={<StaffHome />} />
+          <Route path="attendance" element={<Allow roles={['owner', 'accountant', 'operations']}><AttendancePage /></Allow>} />
+          <Route path="payroll" element={<Allow roles={['owner', 'accountant']}><StaffPayrollPage /></Allow>} />
+          <Route path="settings" element={<Allow roles={['owner', 'accountant']}><StaffSettingsPage /></Allow>} />
+          <Route path="members/:id" element={<MemberPage />} />
+        </Route>
         <Route path="team" element={<Guard area="team"><TeamPage /></Guard>} />
         <Route path="subscription" element={<Guard area="subscription"><SubscriptionPage /></Guard>} />
         <Route path="settings" element={<Guard area="settings"><OfficeSettingsPage /></Guard>} />

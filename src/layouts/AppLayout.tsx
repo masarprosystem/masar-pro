@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import {
-  Building2, CreditCard, FileBarChart, FileUp, HandCoins, Home, LayoutDashboard, Receipt, ShieldCheck, Truck, UserCog, UserSearch, Users, Wallet, Briefcase,
+  BadgeCheck, Banknote, Building2, CalendarDays, Clock, CreditCard, FileBarChart, Settings2, FileUp, HandCoins, Home, LayoutDashboard, Receipt, ShieldCheck, Truck, UserCog, UserSearch, Users, Wallet,
 } from 'lucide-react';
 import { useAuth } from '@/core/auth';
 import { useOffice } from '@/core/office';
@@ -34,7 +34,18 @@ export function AppLayout() {
         { to: '/app/payroll/report', label: 'التقرير النهائي', icon: FileBarChart },
       ],
     });
-  if (can('staff')) groups.push({ title: 'الموظفين', items: [{ to: '/app/staff', label: 'الموظفين والحضور', icon: Briefcase }] });
+  if (can('staff'))
+    groups.push({
+      title: 'الموظفين',
+      items: [
+        { to: '/app/staff', label: 'الحضور والانصراف', icon: Clock, end: true },
+        ...(role === 'owner' || role === 'accountant' || role === 'operations' ? [{ to: '/app/staff/attendance', label: 'سجل الحضور', icon: CalendarDays }] : []),
+        ...(role === 'owner' || role === 'accountant'
+          ? [{ to: '/app/staff/payroll', label: 'مرتبات الموظفين', icon: Banknote }, { to: '/app/staff/settings', label: 'إعدادات الموظفين', icon: Settings2 }]
+          : []),
+        { to: '/app/staff/members/me', label: 'ملفي وعمولاتي', icon: BadgeCheck },
+      ],
+    });
   const officeItems = [
     can('team') && { to: '/app/team', label: 'الفريق والحسابات', icon: Users },
     can('subscription') && { to: '/app/subscription', label: 'الاشتراك', icon: CreditCard },
