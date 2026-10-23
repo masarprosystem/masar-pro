@@ -5,7 +5,7 @@ Agencies recruit couriers for carriers (Bosta, Amazon, Noon, Jumia, Aramex, …)
 Product of **A Tech Solution**. First pilot client: Dynamic Logistics Services (currently on a Google Apps Script prototype).
 
 ## Stack
-- React 18 + TypeScript + Vite, React Router, TanStack Query, Tailwind CSS, react-hook-form + zod, Recharts.
+- React 18 + TypeScript + Vite, React Router 7 (declarative mode), TanStack Query, Tailwind CSS, react-hook-form + zod, Recharts.
 - Supabase (Postgres, Auth, Storage, RLS, Edge Functions, pg_cron). Region: **eu-central-1 (Frankfurt)**.
 - Vercel for hosting (SPA rewrites to `index.html`). Functions region `fra1`.
 - `browser-image-compression` for uploads, SheetJS (`xlsx`) for Excel import/export.
@@ -83,7 +83,8 @@ src/
 4. **Staff**: staff profiles, attendance check-in/out (optional geolocation), commission rules + ledger, monthly staff payroll (fixed + commissions − absence).
 
 ## Conventions
-- SQL migrations in `supabase/migrations/NNN_name.sql`, idempotent, applied in order. `001_foundation.sql` and `002_setup.sql` already exist.
+- SQL migrations in `supabase/migrations/NNN_name.sql`, idempotent, applied in order (001 foundation, 002 setup, 003 member email, 004 recruitment).
+- Image compression is implemented in `src/modules/recruitment/files.ts` (canvas → WebP/JPEG), no external worker/CDN.
 - Generate DB types (`supabase gen types typescript`) into `src/core/db.types.ts` after each migration.
 - Data access per module in `modules/<x>/api.ts` using TanStack Query hooks; paginate lists (50 rows), never `select *` on big tables.
 - Arabic error messages for known DB errors (`SEAT_LIMIT_REACHED`, `LAST_OWNER`, `NOT_ALLOWED`).

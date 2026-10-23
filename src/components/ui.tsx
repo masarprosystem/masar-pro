@@ -1,5 +1,5 @@
-import { useEffect, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { Loader2, X } from 'lucide-react';
+import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { Loader2, Search, X } from 'lucide-react';
 import type { Tone } from '@/core/format';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'gold';
@@ -155,6 +155,23 @@ export function Table({ head, children, empty }: { head: ReactNode[]; children: 
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">{children}</tbody>
       </table>
       {empty}
+    </div>
+  );
+}
+
+/** خانة بحث بتستنى المستخدم يخلص كتابة قبل ما تبحث */
+export function SearchInput({ value, onChange, placeholder, delay = 350 }: { value: string; onChange: (v: string) => void; placeholder: string; delay?: number }) {
+  const [v, setV] = useState(value);
+  useEffect(() => setV(value), [value]);
+  useEffect(() => {
+    if (v === value) return;
+    const t = window.setTimeout(() => onChange(v), delay);
+    return () => window.clearTimeout(t);
+  }, [v]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div className="relative min-w-[220px] flex-1">
+      <Search className="absolute right-3 top-3 h-4 w-4 text-slate-400" />
+      <input className="field pr-9" placeholder={placeholder} value={v} onChange={(e) => setV(e.target.value)} aria-label={placeholder} />
     </div>
   );
 }

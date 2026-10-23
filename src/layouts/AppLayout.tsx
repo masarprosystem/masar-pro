@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import {
-  Building2, CreditCard, Home, ShieldCheck, UserCog, UserSearch, Users, Wallet, Briefcase,
+  Building2, CreditCard, FileUp, Home, LayoutDashboard, ShieldCheck, Truck, UserCog, UserSearch, Users, Wallet, Briefcase,
 } from 'lucide-react';
 import { useAuth } from '@/core/auth';
 import { useOffice } from '@/core/office';
@@ -14,7 +14,16 @@ export function AppLayout() {
   const groups: NavGroup[] = [
     { items: [{ to: '/app', label: 'الرئيسية', icon: Home, end: true }] },
   ];
-  if (can('recruitment')) groups.push({ title: 'التعيينات', items: [{ to: '/app/recruitment', label: 'المناديب', icon: UserSearch }] });
+  if (can('recruitment'))
+    groups.push({
+      title: 'التعيينات',
+      items: [
+        { to: '/app/recruitment', label: 'لوحة التعيينات', icon: LayoutDashboard, end: true },
+        { to: '/app/recruitment/couriers', label: 'المناديب', icon: UserSearch },
+        { to: '/app/recruitment/carriers', label: 'شركات الشحن', icon: Truck },
+        ...(role === 'owner' || role === 'operations' ? [{ to: '/app/recruitment/import', label: 'نقل من شيت قديم', icon: FileUp }] : []),
+      ],
+    });
   if (can('payroll')) groups.push({ title: 'المرتبات', items: [{ to: '/app/payroll', label: 'صرف المرتبات', icon: Wallet }] });
   if (can('staff')) groups.push({ title: 'الموظفين', items: [{ to: '/app/staff', label: 'الموظفين والحضور', icon: Briefcase }] });
   const officeItems = [

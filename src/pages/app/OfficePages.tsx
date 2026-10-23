@@ -47,7 +47,7 @@ export function HomePage() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-200">
                   <Icon className="h-5 w-5" />
                 </div>
-                {!inPlan ? <Badge><Lock className="h-3 w-3" /> مش ضمن الاشتراك</Badge> : !enabled ? <Badge>مش متاح لدورك</Badge> : <Badge tone="gold">قريباً</Badge>}
+                {!inPlan ? <Badge><Lock className="h-3 w-3" /> مش ضمن الاشتراك</Badge> : !enabled ? <Badge>مش متاح لدورك</Badge> : m === 'recruitment' ? <Badge tone="green">شغال</Badge> : <Badge tone="gold">قريباً</Badge>}
               </div>
               <h3 className="font-extrabold text-brand-800 dark:text-brand-100">{MODULE_LABEL[m]}</h3>
               <p className="text-sm leading-relaxed text-slate-500">{MODULE_DESC[m]}</p>
