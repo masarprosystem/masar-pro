@@ -83,7 +83,9 @@ src/
 4. **Staff**: staff profiles, attendance check-in/out (optional geolocation), commission rules + ledger, monthly staff payroll (fixed + commissions − absence).
 
 ## Conventions
-- SQL migrations in `supabase/migrations/NNN_name.sql`, idempotent, applied in order (001 foundation, 002 setup, 003 member email, 004 recruitment).
+- SQL migrations in `supabase/migrations/NNN_name.sql`, idempotent, applied in order (001 foundation, 002 setup, 003 member email, 004 recruitment, 005 payroll).
+- Payroll writes (pay/unpay/link/import) go only through RPCs `payroll_import`, `payroll_pay`, `payroll_unpay`, `payroll_link`; HR role has no payroll access.
+- Spreadsheets are read with `read-excel-file` (xlsx) and `papaparse` (csv) via `src/core/sheets.ts`.
 - Image compression is implemented in `src/modules/recruitment/files.ts` (canvas → WebP/JPEG), no external worker/CDN.
 - Generate DB types (`supabase gen types typescript`) into `src/core/db.types.ts` after each migration.
 - Data access per module in `modules/<x>/api.ts` using TanStack Query hooks; paginate lists (50 rows), never `select *` on big tables.

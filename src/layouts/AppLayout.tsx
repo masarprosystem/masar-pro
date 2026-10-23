@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import {
-  Building2, CreditCard, FileUp, Home, LayoutDashboard, ShieldCheck, Truck, UserCog, UserSearch, Users, Wallet, Briefcase,
+  Building2, CreditCard, FileBarChart, FileUp, HandCoins, Home, LayoutDashboard, Receipt, ShieldCheck, Truck, UserCog, UserSearch, Users, Wallet, Briefcase,
 } from 'lucide-react';
 import { useAuth } from '@/core/auth';
 import { useOffice } from '@/core/office';
@@ -21,10 +21,19 @@ export function AppLayout() {
         { to: '/app/recruitment', label: 'لوحة التعيينات', icon: LayoutDashboard, end: true },
         { to: '/app/recruitment/couriers', label: 'المناديب', icon: UserSearch },
         { to: '/app/recruitment/carriers', label: 'شركات الشحن', icon: Truck },
-        ...(role === 'owner' || role === 'operations' ? [{ to: '/app/recruitment/import', label: 'نقل من شيت قديم', icon: FileUp }] : []),
+        ...(role !== 'accountant' ? [{ to: '/app/recruitment/import', label: 'رفع مناديب من شيت', icon: FileUp }] : []),
       ],
     });
-  if (can('payroll')) groups.push({ title: 'المرتبات', items: [{ to: '/app/payroll', label: 'صرف المرتبات', icon: Wallet }] });
+  if (can('payroll'))
+    groups.push({
+      title: 'المرتبات',
+      items: [
+        { to: '/app/payroll', label: 'صرف المرتبات', icon: Wallet, end: true },
+        { to: '/app/payroll/custody', label: 'العُهد', icon: HandCoins },
+        { to: '/app/payroll/expenses', label: 'المصروفات', icon: Receipt },
+        { to: '/app/payroll/report', label: 'التقرير النهائي', icon: FileBarChart },
+      ],
+    });
   if (can('staff')) groups.push({ title: 'الموظفين', items: [{ to: '/app/staff', label: 'الموظفين والحضور', icon: Briefcase }] });
   const officeItems = [
     can('team') && { to: '/app/team', label: 'الفريق والحسابات', icon: Users },

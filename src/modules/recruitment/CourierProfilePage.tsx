@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, ExternalLink, Eye, FileUp, MapPin, Pencil, Phone, Trash2, Truck, Wallet } from 'lucide-react';
+import { ArrowRight, ExternalLink, Eye, FileUp, MapPin, Pencil, Phone, Trash2, Truck } from 'lucide-react';
 import { supabase } from '@/core/supabase';
 import { useOffice } from '@/core/office';
 import { useAuth } from '@/core/auth';
@@ -17,6 +17,7 @@ import {
   type Courier, type CourierDocument, type DocType,
 } from './model';
 import { StageBadge, StageModal } from './StageModal';
+import { CourierPayrollCard } from '@/modules/payroll/CourierPayrollCard';
 
 export function CourierProfilePage() {
   const { id } = useParams();
@@ -83,9 +84,7 @@ export function CourierProfilePage() {
         </div>
         <div className="space-y-5">
           <TimelineCard courierId={c.id} memberName={memberName} />
-          <Card title="المرتبات">
-            <Empty icon={<Wallet className="h-8 w-8" />} title="مرتبات المندوب شهر بشهر وتطور أداؤه هتظهر هنا بعد قسم المرتبات" />
-          </Card>
+          <CourierPayrollCard courierId={c.id} />
         </div>
       </div>
 

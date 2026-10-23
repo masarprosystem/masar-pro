@@ -16,6 +16,11 @@ const CouriersPage = lazy(() => import('@/modules/recruitment/CouriersPage').the
 const CourierFormPage = lazy(() => import('@/modules/recruitment/CourierFormPage').then((m) => ({ default: m.CourierFormPage })));
 const CourierProfilePage = lazy(() => import('@/modules/recruitment/CourierProfilePage').then((m) => ({ default: m.CourierProfilePage })));
 const CarriersPage = lazy(() => import('@/modules/recruitment/CarriersPage').then((m) => ({ default: m.CarriersPage })));
+const PayrollHome = lazy(() => import('@/modules/payroll/PayrollHome').then((m) => ({ default: m.PayrollHome })));
+const RunPage = lazy(() => import('@/modules/payroll/RunPage').then((m) => ({ default: m.RunPage })));
+const CustodyPage = lazy(() => import('@/modules/payroll/MoneyPages').then((m) => ({ default: m.CustodyPage })));
+const ExpensesPage = lazy(() => import('@/modules/payroll/MoneyPages').then((m) => ({ default: m.ExpensesPage })));
+const ReportPage = lazy(() => import('@/modules/payroll/ReportPage').then((m) => ({ default: m.ReportPage })));
 const ImportPage = lazy(() => import('@/modules/recruitment/ImportPage').then((m) => ({ default: m.ImportPage })));
 import type { OfficeRole } from '@/core/types';
 
@@ -77,9 +82,15 @@ export default function App() {
           <Route path="couriers/:id" element={<CourierProfilePage />} />
           <Route path="couriers/:id/edit" element={<RoleGuard deny={['accountant']}><CourierFormPage /></RoleGuard>} />
           <Route path="carriers" element={<CarriersPage />} />
-          <Route path="import" element={<RoleGuard deny={['accountant', 'hr']}><ImportPage /></RoleGuard>} />
+          <Route path="import" element={<RoleGuard deny={['accountant']}><ImportPage /></RoleGuard>} />
         </Route>
-        <Route path="payroll/*" element={<Guard area="payroll"><ComingSoon module="payroll" /></Guard>} />
+        <Route path="payroll" element={<Guard area="payroll"><Outlet /></Guard>}>
+          <Route index element={<PayrollHome />} />
+          <Route path="runs/:id" element={<RunPage />} />
+          <Route path="custody" element={<CustodyPage />} />
+          <Route path="expenses" element={<ExpensesPage />} />
+          <Route path="report" element={<ReportPage />} />
+        </Route>
         <Route path="staff/*" element={<Guard area="staff"><ComingSoon module="staff" /></Guard>} />
         <Route path="team" element={<Guard area="team"><TeamPage /></Guard>} />
         <Route path="subscription" element={<Guard area="subscription"><SubscriptionPage /></Guard>} />

@@ -31,3 +31,9 @@
   .pop { animation: pop 0.16s ease-out; }
   @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: none; } }
 }
+
+@media print {
+  aside, header, [role='status'] { display: none !important; }
+  body { background: #fff !important; }
+  .card { break-inside: avoid; }
+}

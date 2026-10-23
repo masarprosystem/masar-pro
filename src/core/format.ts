@@ -5,6 +5,9 @@ export const money = (n: number | null | undefined) => Math.round(Number(n) || 0
 // \u2066...\u2069 بيعزلوا التاريخ عن اتجاه الكلام العربي عشان ميتقلبش
 const ltr = (s: string) => `\u2066${s}\u2069`;
 
+/** نسبة زي 3 / 41 من غير ما تتقلب في النص العربي */
+export const ratio = (a: number, b: number) => `\u2066${a} / ${b}\u2069`;
+
 export const fmtDate = (d: string | null | undefined) => (d ? ltr(String(d).slice(0, 10)) : '—');
 
 export const fmtDateTime = (d: string | null | undefined) =>

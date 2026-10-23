@@ -35,7 +35,7 @@ export interface Courier {
   updated_at: string;
 }
 
-export interface Carrier { id: string; office_id: string; name: string; is_active: boolean; sort_order: number }
+export interface Carrier { id: string; office_id: string; name: string; is_active: boolean; sort_order: number; payroll_mapping?: Record<string, string> | null }
 
 export interface StageHistory {
   id: number;
