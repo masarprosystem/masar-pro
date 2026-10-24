@@ -9,6 +9,7 @@ import { AdminLayout } from '@/layouts/AdminLayout';
 import { LoginPage, NoAccessPage, ProfilePage, SetupMissingPage } from '@/pages/AuthPages';
 import { HomePage, OfficeSettingsPage, SubscriptionPage, TeamPage } from '@/pages/app/OfficePages';
 // الصفحات الكبيرة بتتحمل وقت ما تتفتح بس، عشان أول فتح للموقع يبقى أسرع
+const Landing = lazy(() => import('@/pages/Landing').then((m) => ({ default: m.Landing })));
 const AdminOfficesPage = lazy(() => import('@/pages/admin/AdminOfficesPage').then((m) => ({ default: m.AdminOfficesPage })));
 const AdminOfficeDetailPage = lazy(() => import('@/pages/admin/AdminOfficeDetailPage').then((m) => ({ default: m.AdminOfficeDetailPage })));
 const RecruitmentDashboard = lazy(() => import('@/modules/recruitment/RecruitmentDashboard').then((m) => ({ default: m.RecruitmentDashboard })));
@@ -49,7 +50,7 @@ function RequireOffice({ children }: { children: ReactNode }) {
 
 function RequireAdmin({ children }: { children: ReactNode }) {
   const { isPlatformAdmin } = useAuth();
-  if (!isPlatformAdmin) return <Navigate to="/" replace />;
+  if (!isPlatformAdmin) return <Navigate to="/go" replace />;
   return <>{children}</>;
 }
 
@@ -81,7 +82,8 @@ export default function App() {
     <Suspense fallback={<Spinner />}>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<RequireAuth><HomeRedirect /></RequireAuth>} />
+      <Route path="/" element={<Landing />} />
+      <Route path="/go" element={<RequireAuth><HomeRedirect /></RequireAuth>} />
 
       <Route path="/app" element={<RequireAuth><RequireOffice><AppLayout /></RequireOffice></RequireAuth>}>
         <Route index element={<HomePage />} />

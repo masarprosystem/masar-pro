@@ -28,7 +28,7 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  if (!loading && session) return <Navigate to="/" replace />;
+  if (!loading && session) return <Navigate to="/go" replace />;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -53,6 +53,7 @@ export function LoginPage() {
         <Button type="submit" loading={busy} className="w-full">دخول</Button>
       </form>
       <p className="text-xs text-slate-500">نسيت كلمة السر؟ كلم صاحب المكتب يعمل لك كلمة سر جديدة.</p>
+      <a href="/" className="inline-block text-xs font-bold text-brand-600 hover:underline">الرجوع للصفحة الرئيسية</a>
     </BrandScreen>
   );
 }

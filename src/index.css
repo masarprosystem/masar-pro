@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  html { -webkit-tap-highlight-color: transparent; }
+  html { -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; scroll-padding-top: 5rem; }
   body { @apply bg-paper text-slate-800 font-sans antialiased dark:bg-[#0d1512] dark:text-slate-100; }
   :focus-visible { @apply outline-none ring-2 ring-brand-500 ring-offset-1 ring-offset-transparent; }
   input[type='number'] { -moz-appearance: textfield; }
@@ -36,4 +36,13 @@
   aside, header, [role='status'] { display: none !important; }
   body { background: #fff !important; }
   .card { break-inside: avoid; }
+}
+
+/* الصفحة التعريفية: شاشات السيستم الـ 3D بتصغر على الموبايل */
+@media (max-width: 720px) {
+  .mockup-fit { zoom: 0.62; }
+  .landing-nav, .nav-cta { display: none !important; }
+}
+@media (max-width: 420px) {
+  .mockup-fit { zoom: 0.55; }
 }

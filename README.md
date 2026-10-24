@@ -16,6 +16,7 @@ src/components/    عناصر الواجهة + إدارة الحسابات
 src/layouts/       القائمة الجانبية (المكتب / Super Admin)
 src/pages/app/     صفحات المكتب
 src/pages/admin/   صفحات Super Admin
+src/pages/Landing.tsx   الصفحة التعريفية (الرابط الرئيسي /) وفيها زرار تسجيل الدخول
 supabase/migrations/   ملفات قاعدة البيانات بالترتيب (001، 002، 003 ...)
 supabase/functions/    Edge Functions
 ```
