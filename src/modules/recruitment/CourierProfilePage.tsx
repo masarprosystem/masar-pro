@@ -13,10 +13,12 @@ import { Badge, Button, Card, Empty, Field, Modal, Spinner } from '@/components/
 import { useAssignments, useCarriers, useCourier, useDocuments, useStageHistory } from './api';
 import { deleteCourierDocument, kb, signedUrl, uploadCourierDocument } from './files';
 import {
-  DOC_HAS_EXPIRY, DOC_LABEL, DOC_TYPES, GOVERNORATES, REQUIRED_DOCS, STAGE_COLOR, STAGE_LABEL, ageFrom,
+  DOC_HAS_EXPIRY, DOC_LABEL, DOC_TYPES, GOVERNORATES, REQUIRED_DOCS, STAGE_COLOR, ageFrom,
   type Courier, type CourierDocument, type DocType,
 } from './model';
-import { StageBadge, StageModal } from './StageModal';
+import { StageBadge, StageModal, useStageLabel } from './StageModal';
+import { checkEligibility, hasRequirements } from './eligibility';
+import { WhatsAppMenu } from '@/core/whatsapp';
 import { CourierPayrollCard } from '@/modules/payroll/CourierPayrollCard';
 
 export function CourierProfilePage() {
@@ -56,7 +58,7 @@ export function CourierProfilePage() {
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-extrabold text-brand-800 dark:text-brand-100">{c.full_name}</h1>
-            <StageBadge stage={c.stage} />
+            <StageBadge stage={c.stage} stageId={c.stage_id} />
           </div>
           <p className="text-sm text-slate-500">
             {[c.gender === 'male' ? 'ذكر' : c.gender === 'female' ? 'أنثى' : null, age !== null ? `${age} سنة` : null, c.birth_governorate ? `مواليد ${GOVERNORATES[c.birth_governorate] || c.birth_governorate}` : null].filter(Boolean).join(' · ')}
@@ -65,7 +67,7 @@ export function CourierProfilePage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <a href={`tel:${c.primary_phone}`}><Button variant="secondary"><Phone className="h-4 w-4" /> اتصال</Button></a>
-          <a href={`https://wa.me/2${c.primary_phone}`} target="_blank" rel="noopener noreferrer"><Button variant="secondary">واتساب</Button></a>
+          <WhatsAppMenu phone={c.primary_phone} name={c.full_name} />
           {canEdit && <Button onClick={() => setStageOpen(true)}>تغيير المرحلة</Button>}
           {canEdit && <Link to={`/app/recruitment/couriers/${c.id}/edit`}><Button variant="secondary"><Pencil className="h-4 w-4" /> تعديل</Button></Link>}
           {role === 'owner' && writable && (
@@ -80,6 +82,7 @@ export function CourierProfilePage() {
         <div className="space-y-5 lg:col-span-2">
           <InfoCard c={c} recruiter={(c.recruited_by && memberName[c.recruited_by]) || c.legacy_recruiter || '—'} />
           <AssignmentsCard courier={c} canEdit={canEdit} />
+          <EligibilityCard courier={c} />
           <DocumentsCard courier={c} canEdit={canEdit} canDelete={writable && (role === 'owner' || role === 'hr')} />
         </div>
         <div className="space-y-5">
@@ -150,6 +153,7 @@ function InfoCard({ c, recruiter }: { c: Courier; recruiter: string }) {
 
 function TimelineCard({ courierId, memberName }: { courierId: string; memberName: Record<string, string> }) {
   const { data, isLoading } = useStageHistory(courierId);
+  const label = useStageLabel();
   const { office } = useOffice();
   const { data: members } = useMembers(office?.id || '');
   const byUser = useMemo(() => Object.fromEntries((members || []).map((m) => [m.user_id, memberName[m.id]])), [members, memberName]);
@@ -160,7 +164,7 @@ function TimelineCard({ courierId, memberName }: { courierId: string; memberName
           {(data || []).map((h) => (
             <li key={h.id} className="relative">
               <span className="absolute -right-[23px] top-1 h-3 w-3 rounded-full ring-4 ring-white dark:ring-[#121d19]" style={{ background: STAGE_COLOR[h.to_stage] }} />
-              <p className="text-sm font-bold">{STAGE_LABEL[h.to_stage]}</p>
+              <p className="text-sm font-bold">{h.stage_name || label(h.to_stage, h.stage_id)}</p>
               <p className="text-[11px] text-slate-500">{fmtDateTime(h.changed_at)}{h.changed_by && byUser[h.changed_by] ? ` · ${byUser[h.changed_by]}` : ''}</p>
               {h.note && <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{h.note}</p>}
             </li>
@@ -181,6 +185,9 @@ function AssignmentsCard({ courier, canEdit }: { courier: Courier; canEdit: bool
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ carrier_id: '', hub: '', zone: '', start_date: todayStr(), notes: '' });
   const name = (id: string) => carriers?.find((c) => c.id === id)?.name || '—';
+  const { data: docs } = useDocuments(courier.id);
+  const picked = carriers?.find((k) => k.id === f.carrier_id);
+  const elig = picked ? checkEligibility(courier, docs || [], picked) : null;
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ['assignments', courier.id] });
@@ -247,6 +254,11 @@ function AssignmentsCard({ courier, canEdit }: { courier: Courier; canEdit: bool
         </div>
         <Field label="تاريخ البداية" htmlFor="a_start"><input id="a_start" type="date" className="field" value={f.start_date} onChange={(e) => setF({ ...f, start_date: e.target.value })} /></Field>
         <Field label="ملاحظات" htmlFor="a_notes"><input id="a_notes" className="field" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></Field>
+        {elig && !elig.ok && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+            المندوب مش مستوفي شروط {picked?.name}: {elig.reasons.join(' · ')}
+          </div>
+        )}
         <p className="text-xs text-slate-500">لو المندوب نازل لشركة دلوقتي، التعاقد القديم هيتقفل لوحده ويفضل في التاريخ.</p>
       </Modal>
     </Card>
@@ -257,11 +269,14 @@ function DocumentsCard({ courier, canEdit, canDelete }: { courier: Courier; canE
   const toast = useToast();
   const qc = useQueryClient();
   const { data, isLoading } = useDocuments(courier.id);
+  const { data: carriers } = useCarriers(courier.office_id);
+  const current = carriers?.find((k) => k.id === courier.current_carrier_id);
+  const required = (current?.required_docs?.length ? current.required_docs : REQUIRED_DOCS) as DocType[];
   const [type, setType] = useState<DocType>('id_front');
   const [expires, setExpires] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const missing = REQUIRED_DOCS.filter((t) => !(data || []).some((d) => d.doc_type === t));
+  const missing = required.filter((t) => !(data || []).some((d) => d.doc_type === t));
 
   const upload = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -308,7 +323,7 @@ function DocumentsCard({ courier, canEdit, canDelete }: { courier: Courier; canE
   return (
     <Card title="المستندات">
       {missing.length > 0 && (
-        <p className="mb-3 rounded-lg bg-amber-50 p-2.5 text-xs font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-200">ناقص: {missing.map((t) => DOC_LABEL[t]).join('، ')}</p>
+        <p className="mb-3 rounded-lg bg-amber-50 p-2.5 text-xs font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-200">ناقص{current?.required_docs?.length ? ` (مطلوب لـ ${current.name})` : ''}: {missing.map((t) => DOC_LABEL[t]).join('، ')}</p>
       )}
       {canEdit && (
         <div className="mb-4 flex flex-wrap items-end gap-2 rounded-lg border-2 border-dashed border-slate-300 p-3 dark:border-slate-700">
@@ -349,6 +364,27 @@ function DocumentsCard({ courier, canEdit, canDelete }: { courier: Courier; canE
           })}
         </div>
       )}
+    </Card>
+  );
+}
+
+function EligibilityCard({ courier }: { courier: Courier }) {
+  const { data: carriers } = useCarriers(courier.office_id);
+  const { data: docs } = useDocuments(courier.id);
+  const list = (carriers || []).filter((k) => k.is_active);
+  if (!list.length) return null;
+  const rows = list.map((k) => ({ k, r: checkEligibility(courier, docs || [], k) }));
+  return (
+    <Card title="يصلح لأنهي شركة؟">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+        {rows.map(({ k, r }) => (
+          <div key={k.id} className={`rounded-lg border p-3 text-sm ${r.ok ? 'border-brand-200 bg-brand-50/60 dark:border-brand-800 dark:bg-brand-900/20' : 'border-slate-200 dark:border-slate-700'}`}>
+            <p className="flex items-center justify-between font-bold">{k.name} {r.ok ? <Badge tone="green">يصلح</Badge> : <Badge tone="amber">مش مستوفي</Badge>}</p>
+            {!r.ok && <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{r.reasons.join(' · ')}</p>}
+            {r.ok && !hasRequirements(k) && <p className="mt-1 text-[11px] text-slate-500">الشركة دي مالهاش شروط متسجلة</p>}
+          </div>
+        ))}
+      </div>
     </Card>
   );
 }

@@ -11,7 +11,7 @@ import { useToast } from '@/core/toast';
 import { cellDate, cellText, detectColumns, fetchAll, findHeaderRow, normHeader, readSheet, toObjects, type Cell } from '@/core/sheets';
 import { useMembers } from '@/components/MembersManager';
 import { Badge, Button, Card, PageHeader, Table } from '@/components/ui';
-import { useCarriers } from './api';
+import { useCarriers, useOfficeStages } from './api';
 import { LEAD_SOURCES, STAGES, STAGE_LABEL, VEHICLES, normalizePhone, parseNationalId, type CourierStage, type Relative } from './model';
 
 // أسماء الأعمدة المحتملة لكل حقل (الـ Template + شيت منصة التعيينات القديمة)
@@ -81,6 +81,7 @@ export function ImportPage() {
   const qc = useQueryClient();
   const { data: members } = useMembers(office?.id || '');
   const { data: carriers } = useCarriers(office?.id);
+  const { data: officeStages } = useOfficeStages(office?.id);
   const [fileName, setFileName] = useState('');
   const [headers, setHeaders] = useState<string[]>([]);
   const [raw, setRaw] = useState<Record<string, Cell>[]>([]);
@@ -132,7 +133,9 @@ export function ImportPage() {
       seen.add(nidRaw);
       const phone = normalizePhone(g(r, 'primary_phone'));
       if (!phone) return { line, name, status: 'invalid', reason: 'من غير موبايل' };
-      const stage = STATUS_MAP[normHeader(g(r, 'status'))] || 'applied';
+      const statusText = normHeader(g(r, 'status'));
+      const officeStage = (officeStages || []).find((s) => s.is_active && normHeader(s.name) === statusText);
+      const stage = officeStage?.base_stage || STATUS_MAP[statusText] || 'applied';
       let note = g(r, 'status_note');
       if ((stage === 'inactive' || stage === 'blocked') && !note) note = 'نقل من شيت';
       const recName = g(r, 'recruiter');
@@ -170,6 +173,7 @@ export function ImportPage() {
           assigned_area: g(r, 'assigned_area') || null,
           lead_source: g(r, 'lead_source') || null,
           stage,
+          stage_id: officeStage && !officeStage.is_core ? officeStage.id : null,
           stage_note: note || null,
           recruited_by: rec?.id || null,
           legacy_recruiter: rec ? null : recName || null,
@@ -182,7 +186,7 @@ export function ImportPage() {
         },
       };
     });
-  }, [raw, map, members, carriers, existing, office, user]);
+  }, [raw, map, members, carriers, officeStages, existing, office, user]);
 
   const ready = prepared.filter((p) => p.status === 'ready');
   const skipped = prepared.filter((p) => p.status !== 'ready');

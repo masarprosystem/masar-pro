@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import {
-  BadgeCheck, Banknote, Building2, CalendarDays, Clock, CreditCard, FileBarChart, Settings2, FileUp, HandCoins, Home, LayoutDashboard, Receipt, ShieldCheck, Truck, UserCog, UserSearch, Users, Wallet,
+  BadgeCheck, Banknote, Link2, ListOrdered, TrendingUp, Building2, CalendarDays, Clock, CreditCard, FileBarChart, Settings2, FileUp, HandCoins, Home, LayoutDashboard, Receipt, ShieldCheck, Truck, UserCog, UserSearch, Users, Wallet,
 } from 'lucide-react';
 import { useAuth } from '@/core/auth';
 import { useOffice } from '@/core/office';
@@ -21,7 +21,8 @@ export function AppLayout() {
         { to: '/app/recruitment', label: 'لوحة التعيينات', icon: LayoutDashboard, end: true },
         { to: '/app/recruitment/couriers', label: 'المناديب', icon: UserSearch },
         { to: '/app/recruitment/carriers', label: 'شركات الشحن', icon: Truck },
-        ...(role !== 'accountant' ? [{ to: '/app/recruitment/import', label: 'رفع مناديب من شيت', icon: FileUp }] : []),
+        ...(role !== 'accountant' ? [{ to: '/app/recruitment/import', label: 'رفع مناديب من شيت', icon: FileUp }, { to: '/app/recruitment/apply', label: 'رابط التقديم', icon: Link2 }] : []),
+        ...(role === 'owner' || role === 'operations' ? [{ to: '/app/recruitment/stages', label: 'مراحل التعيين', icon: ListOrdered }] : []),
       ],
     });
   if (can('payroll'))
@@ -32,6 +33,7 @@ export function AppLayout() {
         { to: '/app/payroll/custody', label: 'العُهد', icon: HandCoins },
         { to: '/app/payroll/expenses', label: 'المصروفات', icon: Receipt },
         { to: '/app/payroll/report', label: 'التقرير النهائي', icon: FileBarChart },
+        ...(role === 'owner' || role === 'accountant' ? [{ to: '/app/payroll/profit', label: 'ربحية المكتب', icon: TrendingUp }] : []),
       ],
     });
   if (can('staff'))

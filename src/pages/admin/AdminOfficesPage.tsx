@@ -9,6 +9,7 @@ import { STATUSES, STATUS_LABEL, STATUS_TONE, fmtDate, fmtDateTime, generatePass
 import { useToast } from '@/core/toast';
 import type { OfficeOverview, SubscriptionStatus } from '@/core/types';
 import { Badge, Button, Empty, Field, Modal, PageHeader, Spinner, Stat, Table } from '@/components/ui';
+import { ExportButton } from '@/components/ExportButton';
 
 export function useOverview() {
   return useQuery({
@@ -47,7 +48,14 @@ export function AdminOfficesPage() {
       <PageHeader
         title="المكاتب والاشتراكات"
         subtitle="كل المكاتب المشتركة في Masar Pro"
-        actions={<Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> مكتب جديد</Button>}
+        actions={<>
+          <ExportButton fileName="المكاتب" rows={data || []} cols={[
+            { header: 'المكتب', value: (o) => o.office_name }, { header: 'المدينة', value: (o) => o.city }, { header: 'التليفون', value: (o) => o.phone },
+            { header: 'صاحب المكتب', value: (o) => o.owner_email }, { header: 'الحالة', value: (o) => STATUS_LABEL[o.status] }, { header: 'ينتهي', value: (o) => o.current_period_end },
+            { header: 'الحسابات', value: (o) => `${o.members_active}/${o.seats_total}` }, { header: 'الاشتراك الشهري', value: (o) => Number(o.monthly_price) }, { header: 'آخر نشاط', value: (o) => o.last_activity },
+          ]} />
+          <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> مكتب جديد</Button>
+        </>}
       />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Stat tone="brand" label="الدخل الشهري المتكرر" value={money(mrr)} sub="جنيه / شهر" />

@@ -5,9 +5,10 @@ import { useOffice } from '@/core/office';
 import { fmtDate } from '@/core/format';
 import { useMembers } from '@/components/MembersManager';
 import { Button, Empty, PageHeader, SearchInput, Spinner, Table } from '@/components/ui';
-import { PAGE_SIZE, useCarriers, useCouriers, usePipeline, type CourierFilters, type CourierRow } from './api';
-import { PIPELINE, STAGES, STAGE_COLOR, STAGE_LABEL, VEHICLES, ageFrom, type CourierStage } from './model';
-import { StageBadge, StageModal } from './StageModal';
+import { ExportButton } from '@/components/ExportButton';
+import { PAGE_SIZE, fetchAllCouriers, useCarriers, useCouriers, usePipeline, type CourierFilters, type CourierRow } from './api';
+import { PIPELINE, STAGE_COLOR, VEHICLES, ageFrom } from './model';
+import { StageBadge, StageModal, useStageLabel, useStageOptions } from './StageModal';
 
 export function CouriersPage() {
   const { office, writable, role } = useOffice();
@@ -16,7 +17,7 @@ export function CouriersPage() {
   const view = params.get('view') === 'board' ? 'board' : 'list';
   const f: CourierFilters = {
     q: params.get('q') || '',
-    stage: (params.get('stage') || '') as CourierStage | '',
+    stage: (params.get('stage') || '') as CourierFilters['stage'],
     carrier: params.get('carrier') || '',
     recruiter: params.get('recruiter') || '',
     vehicle: params.get('vehicle') || '',
@@ -30,6 +31,8 @@ export function CouriersPage() {
 
   const { data: carriers } = useCarriers(office?.id);
   const { data: members } = useMembers(office?.id || '');
+  const stageOptions = useStageOptions();
+  const stageLabel = useStageLabel();
   const [stageFor, setStageFor] = useState<CourierRow | null>(null);
   const carrierName = useMemo(() => Object.fromEntries((carriers || []).map((c) => [c.id, c.name])), [carriers]);
   const memberName = useMemo(() => Object.fromEntries((members || []).map((m) => [m.id, m.full_name || m.email || ''])), [members]);
@@ -44,6 +47,16 @@ export function CouriersPage() {
               <button onClick={() => setF({ view: '' })} className={`flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-bold ${view === 'list' ? 'bg-brand-600 text-white' : 'text-slate-600'}`}><List className="h-4 w-4" /> قائمة</button>
               <button onClick={() => setF({ view: 'board' })} className={`flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-bold ${view === 'board' ? 'bg-brand-600 text-white' : 'text-slate-600'}`}><Columns3 className="h-4 w-4" /> مراحل التعيين</button>
             </div>
+            {view === 'list' && office && (
+              <ExportButton fileName="المناديب" rows={() => fetchAllCouriers(office.id, f)} cols={[
+                { header: 'الاسم', value: (c) => c.full_name }, { header: 'الرقم القومي', value: (c) => c.national_id }, { header: 'الموبايل', value: (c) => c.primary_phone },
+                { header: 'رقم تاني', value: (c) => c.alt_phone }, { header: 'المرحلة', value: (c) => stageLabel(c.stage, c.stage_id) }, { header: 'سبب المرحلة', value: (c) => c.stage_note },
+                { header: 'الشركة', value: (c) => (c.current_carrier_id ? carrierName[c.current_carrier_id] : '') }, { header: 'الهب', value: (c) => c.current_hub },
+                { header: 'المنطقة', value: (c) => c.assigned_area }, { header: 'المركبة', value: (c) => c.vehicle_type }, { header: 'السن', value: (c) => ageFrom(c.birth_date) },
+                { header: 'مسؤول التعيين', value: (c) => (c.recruited_by ? memberName[c.recruited_by] : c.legacy_recruiter) }, { header: 'المصدر', value: (c) => c.lead_source },
+                { header: 'الحملة', value: (c) => c.lead_campaign }, { header: 'تاريخ التعيين', value: (c) => c.appointment_date }, { header: 'العنوان', value: (c) => c.current_address },
+              ]} />
+            )}
             {canEdit && <Link to="/app/recruitment/couriers/new"><Button><Plus className="h-4 w-4" /> مندوب جديد</Button></Link>}
           </>
         }
@@ -55,9 +68,9 @@ export function CouriersPage() {
         <>
           <div className="card flex flex-wrap gap-2 p-3">
             <SearchInput value={f.q} onChange={(q) => setF({ q })} placeholder="بحث بالاسم أو الموبايل أو الرقم القومي" />
-            <select className="field !w-auto" value={f.stage} onChange={(e) => setF({ stage: e.target.value as CourierStage })} aria-label="المرحلة">
+            <select className="field !w-auto" value={f.stage} onChange={(e) => setF({ stage: e.target.value as CourierFilters['stage'] })} aria-label="المرحلة">
               <option value="">كل المراحل</option>
-              {STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
+              {stageOptions.map((s) => <option key={s.id} value={s.is_core ? s.base_stage : `sid:${s.id}`}>{s.name}</option>)}
             </select>
             <select className="field !w-auto" value={f.carrier} onChange={(e) => setF({ carrier: e.target.value })} aria-label="الشركة">
               <option value="">كل الشركات</option>
@@ -121,7 +134,7 @@ function ListView({ officeId, f, setF, carrierName, memberName, onStage }: {
                 className="text-right disabled:cursor-default"
                 title={onStage ? 'تغيير المرحلة' : undefined}
               >
-                <StageBadge stage={c.stage} />
+                <StageBadge stage={c.stage} stageId={c.stage_id} />
                 {c.stage_note && <p className="mt-1 max-w-[200px] truncate text-[11px] text-slate-500" title={c.stage_note}>{c.stage_note}</p>}
               </button>
             </td>
@@ -135,16 +148,22 @@ function ListView({ officeId, f, setF, carrierName, memberName, onStage }: {
 
 function Board({ officeId, carrierName, onStage }: { officeId?: string; carrierName: Record<string, string>; onStage?: (c: CourierRow) => void }) {
   const { data, isLoading } = usePipeline(officeId);
+  const options = useStageOptions();
   const nav = useNavigate();
   if (isLoading) return <Spinner />;
+  // عمود لكل مرحلة من مراحل التعيين (الأساسية والخاصة بالمكتب)
+  const cols = options.filter((o) => PIPELINE.includes(o.base_stage));
+  const colIds = new Set(cols.map((c) => c.id));
+  const colOf = (c: CourierRow) => (c.stage_id && colIds.has(c.stage_id) ? c.stage_id : cols.find((x) => x.is_core && x.base_stage === c.stage)?.id);
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {PIPELINE.map((s) => {
-        const items = (data || []).filter((c) => c.stage === s);
+    <div className="flex gap-4 overflow-x-auto pb-2">
+      {cols.map((col) => {
+        const s = col.base_stage;
+        const items = (data || []).filter((c) => colOf(c) === col.id);
         return (
-          <div key={s} className="card flex max-h-[70vh] flex-col overflow-hidden">
+          <div key={col.id} className="card flex max-h-[70vh] w-72 shrink-0 flex-col overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800" style={{ borderTop: `3px solid ${STAGE_COLOR[s]}` }}>
-              <p className="text-sm font-extrabold">{STAGE_LABEL[s]}</p>
+              <p className="text-sm font-extrabold">{col.name}</p>
               <span className="tabular rounded-full bg-slate-100 px-2 text-xs font-bold dark:bg-slate-800">{items.length}</span>
             </div>
             <div className="flex-1 space-y-2 overflow-y-auto p-3">

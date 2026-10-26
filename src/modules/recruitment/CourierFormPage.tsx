@@ -10,7 +10,8 @@ import { useToast } from '@/core/toast';
 import { useMembers } from '@/components/MembersManager';
 import { Button, Card, Field, PageHeader, Spinner } from '@/components/ui';
 import { useCarriers, useCourier } from './api';
-import { LEAD_SOURCES, STAGES, STAGE_LABEL, VEHICLES, isEgyptMobile, normalizePhone, parseNationalId, type CourierStage, type Relative } from './model';
+import { LEAD_SOURCES, VEHICLES, isEgyptMobile, normalizePhone, parseNationalId, type CourierStage, type Relative } from './model';
+import { useStageOptions } from './StageModal';
 
 const emptyRel = (): Relative => ({ name: '', relation: '', phone: '' });
 
@@ -33,6 +34,11 @@ export function CourierFormPage() {
     carrier_id: '', hub: '', zone: '',
   });
   const [rels, setRels] = useState<Relative[]>([emptyRel(), emptyRel(), emptyRel()]);
+  const stageOptions = useStageOptions();
+  const [stageKey, setStageKey] = useState('');
+  useEffect(() => {
+    if (!stageKey && stageOptions.length) setStageKey(stageOptions[0].id);
+  }, [stageOptions, stageKey]);
 
   useEffect(() => {
     if (!editing && membership && !f.recruited_by) setF((x) => ({ ...x, recruited_by: membership.id }));
@@ -86,7 +92,10 @@ export function CourierFormPage() {
       }
       const { data, error } = await supabase
         .from('couriers')
-        .insert({ ...row, office_id: office!.id, stage: f.stage, stage_note: f.stage_note.trim() || null, created_by: user?.id })
+        .insert({
+          ...row, office_id: office!.id, stage: f.stage, stage_note: f.stage_note.trim() || null, created_by: user?.id,
+          stage_id: stageOptions.find((o) => o.id === stageKey && !o.is_core && !o.id.startsWith('core:'))?.id ?? null,
+        })
         .select('id')
         .single();
       if (error) throw error;
@@ -136,8 +145,8 @@ export function CourierFormPage() {
           </Field>
           {!editing && (
             <Field label="المرحلة" htmlFor="f_stage">
-              <select id="f_stage" className="field font-bold" value={f.stage} onChange={set('stage')}>
-                {STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
+              <select id="f_stage" className="field font-bold" value={stageKey} onChange={(e) => { const o = stageOptions.find((x) => x.id === e.target.value); setStageKey(e.target.value); if (o) setF((x) => ({ ...x, stage: o.base_stage })); }}>
+                {stageOptions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </Field>
           )}

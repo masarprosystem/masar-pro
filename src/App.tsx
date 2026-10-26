@@ -9,6 +9,10 @@ import { AdminLayout } from '@/layouts/AdminLayout';
 import { LoginPage, NoAccessPage, ProfilePage, SetupMissingPage } from '@/pages/AuthPages';
 import { HomePage, OfficeSettingsPage, SubscriptionPage, TeamPage } from '@/pages/app/OfficePages';
 // الصفحات الكبيرة بتتحمل وقت ما تتفتح بس، عشان أول فتح للموقع يبقى أسرع
+const StagesPage = lazy(() => import('@/modules/recruitment/StagesPage').then((m) => ({ default: m.StagesPage })));
+const ApplyLinkPage = lazy(() => import('@/modules/recruitment/ApplyLinkPage').then((m) => ({ default: m.ApplyLinkPage })));
+const ProfitPage = lazy(() => import('@/modules/payroll/ProfitPage').then((m) => ({ default: m.ProfitPage })));
+const PublicApplyPage = lazy(() => import('@/pages/PublicApplyPage').then((m) => ({ default: m.PublicApplyPage })));
 const Landing = lazy(() => import('@/pages/Landing').then((m) => ({ default: m.Landing })));
 const AdminOfficesPage = lazy(() => import('@/pages/admin/AdminOfficesPage').then((m) => ({ default: m.AdminOfficesPage })));
 const AdminOfficeDetailPage = lazy(() => import('@/pages/admin/AdminOfficeDetailPage').then((m) => ({ default: m.AdminOfficeDetailPage })));
@@ -64,9 +68,9 @@ function RoleGuard({ deny, children }: { deny: OfficeRole[]; children: ReactNode
   return role && !deny.includes(role) && writable ? <>{children}</> : <Navigate to="/app/recruitment" replace />;
 }
 
-function Allow({ roles, children }: { roles: OfficeRole[]; children: ReactNode }) {
+function Allow({ roles, children, back = '/app/staff' }: { roles: OfficeRole[]; children: ReactNode; back?: string }) {
   const { role } = useOffice();
-  return role && roles.includes(role) ? <>{children}</> : <Navigate to="/app/staff" replace />;
+  return role && roles.includes(role) ? <>{children}</> : <Navigate to={back} replace />;
 }
 
 function HomeRedirect() {
@@ -83,6 +87,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/" element={<Landing />} />
+      <Route path="/apply/:slug" element={<PublicApplyPage />} />
       <Route path="/go" element={<RequireAuth><HomeRedirect /></RequireAuth>} />
 
       <Route path="/app" element={<RequireAuth><RequireOffice><AppLayout /></RequireOffice></RequireAuth>}>
@@ -95,6 +100,8 @@ export default function App() {
           <Route path="couriers/:id/edit" element={<RoleGuard deny={['accountant']}><CourierFormPage /></RoleGuard>} />
           <Route path="carriers" element={<CarriersPage />} />
           <Route path="import" element={<RoleGuard deny={['accountant']}><ImportPage /></RoleGuard>} />
+          <Route path="stages" element={<Allow roles={['owner', 'operations']} back="/app/recruitment"><StagesPage /></Allow>} />
+          <Route path="apply" element={<Allow roles={['owner', 'operations', 'hr']} back="/app/recruitment"><ApplyLinkPage /></Allow>} />
         </Route>
         <Route path="payroll" element={<Guard area="payroll"><Outlet /></Guard>}>
           <Route index element={<PayrollHome />} />
@@ -102,6 +109,7 @@ export default function App() {
           <Route path="custody" element={<CustodyPage />} />
           <Route path="expenses" element={<ExpensesPage />} />
           <Route path="report" element={<ReportPage />} />
+          <Route path="profit" element={<Allow roles={['owner', 'accountant']} back="/app/payroll"><ProfitPage /></Allow>} />
         </Route>
         <Route path="staff" element={<Guard area="staff"><Outlet /></Guard>}>
           <Route index element={<StaffHome />} />

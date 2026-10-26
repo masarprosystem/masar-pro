@@ -20,7 +20,9 @@ export interface Courier {
   vehicle_type: string | null;
   assigned_area: string | null;
   lead_source: string | null;
+  lead_campaign: string | null;
   stage: CourierStage;
+  stage_id: string | null;
   stage_note: string | null;
   stage_changed_at: string;
   recruited_by: string | null;
@@ -35,13 +37,21 @@ export interface Courier {
   updated_at: string;
 }
 
-export interface Carrier { id: string; office_id: string; name: string; is_active: boolean; sort_order: number; payroll_mapping?: Record<string, string> | null }
+export interface Carrier {
+  id: string; office_id: string; name: string; is_active: boolean; sort_order: number;
+  payroll_mapping?: Record<string, string> | null;
+  min_age: number | null; max_age: number | null; allowed_vehicles: string[]; required_docs: string[];
+}
+
+export interface OfficeStage { id: string; office_id: string; base_stage: CourierStage; name: string; is_core: boolean; sort_order: number; is_active: boolean }
 
 export interface StageHistory {
   id: number;
   courier_id: string;
   from_stage: CourierStage | null;
   to_stage: CourierStage;
+  stage_id: string | null;
+  stage_name: string | null;
   note: string | null;
   changed_by: string | null;
   changed_at: string;

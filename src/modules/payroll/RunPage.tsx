@@ -8,10 +8,12 @@ import { errorMessage } from '@/core/errors';
 import { fmtDate, money, ratio, todayStr } from '@/core/format';
 import { useToast } from '@/core/toast';
 import { Badge, Button, Empty, Field, Modal, PageHeader, SearchInput, Spinner, Stat, Table } from '@/components/ui';
+import { ExportButton } from '@/components/ExportButton';
 import { useCarriers } from '@/modules/recruitment/api';
 import { STAGE_LABEL, type CourierStage } from '@/modules/recruitment/model';
 import { StageBadge } from '@/modules/recruitment/StageModal';
 import { searchCouriers, useRun, useRunLines } from './api';
+import { WhatsAppMenu } from '@/core/whatsapp';
 import { PAY_FIELD_LABEL, PAY_METHODS, cleanCarrierName, hasShort, lineAdvances, lineNet, monthLabel, type PayrollLine } from './model';
 import { usePayers, usePayrollPerms } from './shared';
 
@@ -94,7 +96,16 @@ export function RunPage() {
       <PageHeader
         title={`${carrier} — ${monthLabel(run.month)}`}
         subtitle={run.source_file_name || undefined}
-        actions={perms.canDeleteRun && <Button variant="danger" loading={del.isPending} onClick={() => confirm(`حذف شيت ${carrier} لشهر ${monthLabel(run.month)} بكل سجلات الصرف بتاعته؟`) && del.mutate()}><Trash2 className="h-4 w-4" /> حذف الشيت</Button>}
+        actions={<>
+          <ExportButton fileName={`${carrier}-${run.month}`} rows={list} cols={[
+            { header: 'الاسم في الشيت', value: (l) => cleanCarrierName(l.carrier_name) }, { header: 'المندوب', value: (l) => (l.courier_id ? couriers?.[l.courier_id]?.full_name : '') },
+            { header: 'الهب', value: (l) => l.hub }, { header: 'أيام', value: (l) => l.work_days }, { header: 'التوصيلات', value: (l) => l.deliveries },
+            { header: 'إجمالي المرتب', value: (l) => Number(l.total_salary) }, { header: 'السلف', value: (l) => Number(lineAdvances(l) || 0) },
+            { header: 'العجز', value: (l) => Number(l.deficit) }, { header: 'اللوست', value: (l) => Number(l.lost) }, { header: 'الصافي', value: (l) => lineNet(l) },
+            { header: 'الحالة', value: (l) => (l.paid ? 'اتصرف' : 'لسه') }, { header: 'طريقة التحويل', value: (l) => l.pay_method }, { header: 'تاريخ الصرف', value: (l) => l.paid_at },
+          ]} />
+          {perms.canDeleteRun && <Button variant="danger" loading={del.isPending} onClick={() => confirm(`حذف شيت ${carrier} لشهر ${monthLabel(run.month)} بكل سجلات الصرف بتاعته؟`) && del.mutate()}><Trash2 className="h-4 w-4" /> حذف الشيت</Button>}
+        </>}
       />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Stat tone="brand" label="المناديب" value={L.length} sub={`${L.filter((l) => l.courier_id).length} مربوطين بملفاتهم`} />
@@ -164,6 +175,7 @@ function PaymentModal({ line, courier, onClose }: { line: PayrollLine | null; co
   const toast = useToast();
   const qc = useQueryClient();
   const perms = usePayrollPerms();
+  const { data: run } = useRun(line?.run_id);
   const { activePayers, name: payerName } = usePayers();
   const [f, setF] = useState({ advances: '0', method: '', paid_by: '', paid_at: todayStr(), notes: '' });
   const [search, setSearch] = useState('');
@@ -270,6 +282,14 @@ function PaymentModal({ line, courier, onClose }: { line: PayrollLine | null; co
               <span className="mr-2"><StageBadge stage={courier.stage} /></span>
               <a href={`tel:${courier.primary_phone}`} className="tabular mr-2 text-sm" dir="ltr">{courier.primary_phone}</a>
             </div>
+            <WhatsAppMenu size="sm" phone={courier.primary_phone} name={courier.full_name} keys={['payslip', 'general']} extra={{
+              'الشهر': monthLabel(run?.month || ''),
+              'التفاصيل': [`التوصيلات: ${money(line.deliveries)}`, `إجمالي المرتب: ${money(line.total_salary)}`,
+                line.total_deductions ? `الخصومات: ${money(line.total_deductions)}` : '', line.total_bonus ? `البونص: ${money(line.total_bonus)}` : '',
+                Number(f.advances) ? `السلف: ${money(Number(f.advances))}` : '', line.deficit ? `العجز: ${money(line.deficit)}` : '', line.lost ? `اللوست: ${money(line.lost)}` : '']
+                .filter(Boolean).join('\n'),
+              'الصافي': money(net),
+            }} />
             {perms.canPay && <Button size="sm" variant="ghost" loading={linkMut.isPending} onClick={() => linkMut.mutate(null)}><Unlink className="h-4 w-4" /> فك الربط</Button>}
           </div>
         ) : perms.canPay ? (

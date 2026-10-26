@@ -7,6 +7,7 @@ import { errorMessage } from '@/core/errors';
 import { useToast } from '@/core/toast';
 import { useMembers } from '@/components/MembersManager';
 import { Button, Field, Modal, PageHeader, Spinner } from '@/components/ui';
+import { ExportButton } from '@/components/ExportButton';
 import { useMonth } from '@/modules/payroll/api';
 import { MonthBar } from '@/modules/payroll/shared';
 import { useAttendance, useHolidays, useProfiles } from './api';
@@ -60,7 +61,11 @@ export function AttendancePage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="سجل الحضور" subtitle="✓ حضر في الميعاد · ت متأخر · غ غياب · إ إجازة" actions={<MonthBar month={month} onChange={setMonth} prefix="حضور" />} />
+      <PageHeader title="سجل الحضور" subtitle="✓ حضر في الميعاد · ت متأخر · غ غياب · إ إجازة" actions={<><MonthBar month={month} onChange={setMonth} prefix="حضور" /><ExportButton fileName={`الحضور-${month}`} rows={(rows || []).slice().sort((a, b) => a.day.localeCompare(b.day))} cols={[
+        { header: 'اليوم', value: (a) => a.day }, { header: 'الموظف', value: (a) => list.find((m) => m.id === a.member_id)?.full_name || '' },
+        { header: 'الحالة', value: (a) => ATT_LABEL[a.status] }, { header: 'الحضور', value: (a) => (a.check_in ? cairoTime(a.check_in) : '') },
+        { header: 'الانصراف', value: (a) => (a.check_out ? cairoTime(a.check_out) : '') }, { header: 'دقايق التأخير', value: (a) => a.late_minutes }, { header: 'ملاحظات', value: (a) => a.notes },
+      ]} /></>} />
       {isLoading ? <Spinner /> : (
         <div className="card overflow-x-auto">
           <table className="text-center text-xs">

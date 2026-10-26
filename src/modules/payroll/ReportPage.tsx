@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { FileDown, Printer } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import { useOffice } from '@/core/office';
 import { fmtDate, money } from '@/core/format';
 import { Card, Empty, PageHeader, Spinner, Stat, Table, Button } from '@/components/ui';
+import { ExportButton } from '@/components/ExportButton';
 import { useCarriers } from '@/modules/recruitment/api';
 import { useMonth } from './api';
 import { cleanCarrierName, hasShort, lineAdvances, lineNet, monthLabel } from './model';
@@ -40,16 +41,6 @@ export function ReportPage() {
     (!flt.method || l.pay_method === flt.method) &&
     (!flt.by || l.paid_by === flt.by));
 
-  const csv = () => {
-    const q = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const out = [['المندوب', 'الشركة', 'الهب', 'التوصيلات', 'إجمالي المرتب', 'السلف', 'العجز', 'اللوست', 'الصافي', 'الحالة', 'طريقة التحويل', 'المحوّل', 'تاريخ الصرف'].join(',')];
-    filtered.forEach((l) => out.push([q(cleanCarrierName(l.carrier_name)), q(carrierName[l.run.carrier_id]), q(l.hub), l.deliveries, l.total_salary, lineAdvances(l), l.deficit, l.lost, lineNet(l), l.paid ? 'تم الصرف' : 'لسه', q(l.pay_method), q(l.paid_by ? payerName[l.paid_by] : ''), q(l.paid_at)].join(',')));
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob(['\uFEFF' + out.join('\n')], { type: 'text/csv;charset=utf-8' }));
-    a.download = `مرتبات-${month}.csv`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  };
 
   const methods = group(paid, (l) => l.pay_method || '—');
   const byCarrier = group(lines, (l) => carrierName[l.run.carrier_id] || '—');
@@ -60,7 +51,13 @@ export function ReportPage() {
     <div className="space-y-6">
       <PageHeader
         title={`التقرير النهائي — ${monthLabel(month)}`}
-        actions={<div className="flex flex-wrap gap-2 print:hidden"><MonthBar month={month} onChange={setMonth} /><Button variant="secondary" onClick={csv}><FileDown className="h-4 w-4" /> Excel (CSV)</Button><Button variant="secondary" onClick={() => window.print()}><Printer className="h-4 w-4" /> طباعة / PDF</Button></div>}
+        actions={<div className="flex flex-wrap gap-2 print:hidden"><MonthBar month={month} onChange={setMonth} /><ExportButton fileName={`مرتبات-${month}`} rows={filtered} cols={[
+            { header: 'المندوب', value: (l) => cleanCarrierName(l.carrier_name) }, { header: 'الشركة', value: (l) => carrierName[l.run.carrier_id] }, { header: 'الهب', value: (l) => l.hub },
+            { header: 'التوصيلات', value: (l) => l.deliveries }, { header: 'إجمالي المرتب', value: (l) => Number(l.total_salary) }, { header: 'السلف', value: (l) => Number(lineAdvances(l) || 0) },
+            { header: 'العجز', value: (l) => Number(l.deficit) }, { header: 'اللوست', value: (l) => Number(l.lost) }, { header: 'الصافي', value: (l) => lineNet(l) },
+            { header: 'الحالة', value: (l) => (l.paid ? 'تم الصرف' : 'لسه') }, { header: 'طريقة التحويل', value: (l) => l.pay_method },
+            { header: 'المحوّل', value: (l) => (l.paid_by ? payerName[l.paid_by] : '') }, { header: 'تاريخ الصرف', value: (l) => l.paid_at },
+          ]} /><Button variant="secondary" onClick={() => window.print()}><Printer className="h-4 w-4" /> طباعة / PDF</Button></div>}
       />
       {isLoading ? <Spinner /> : !lines.length ? <div className="card"><Empty title={`مفيش مرتبات مرفوعة لشهر ${monthLabel(month)}`} /></div> : (
         <>

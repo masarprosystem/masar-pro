@@ -7,6 +7,7 @@ import { errorMessage } from '@/core/errors';
 import { ROLE_LABEL, fmtDate, money, todayStr } from '@/core/format';
 import { useToast } from '@/core/toast';
 import { Badge, Button, Card, Empty, Field, PageHeader, Spinner, Stat, Table } from '@/components/ui';
+import { ExportButton } from '@/components/ExportButton';
 import { useCustody, useExpenses, useMonth, useMonthLines } from './api';
 import { EXPENSE_CATEGORIES, monthLabel } from './model';
 import { MonthBar, usePayers, usePayrollPerms } from './shared';
@@ -60,7 +61,10 @@ export function CustodyPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="العُهد" subtitle="العُهدة بتتسجل لكل موظف في كل شهر. المتبقي = العُهدة − اللي اتصرف على المناديب − المصروفات اللي طلّعها." actions={<MonthBar month={month} onChange={setMonth} />} />
+      <PageHeader title="العُهد" subtitle="العُهدة بتتسجل لكل موظف في كل شهر. المتبقي = العُهدة − اللي اتصرف على المناديب − المصروفات اللي طلّعها." actions={<><MonthBar month={month} onChange={setMonth} /><ExportButton fileName={`العهد-${month}`} rows={rows} cols={[
+        { header: 'الموظف', value: (r) => r.member.full_name || r.member.email }, { header: 'العُهدة', value: (r) => r.custody }, { header: 'اتصرف على المناديب', value: (r) => r.disbursed },
+        { header: 'عدد التحويلات', value: (r) => r.count }, { header: 'مصروفات', value: (r) => r.spent }, { header: 'المتبقي', value: (r) => r.remaining },
+      ]} /></>} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat tone="brand" label={`عُهد ${monthLabel(month)}`} value={money(sum('custody'))} />
         <Stat label="اتصرف على المناديب" value={money(sum('disbursed'))} />
@@ -150,7 +154,10 @@ export function ExpensesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="المصروفات" actions={<MonthBar month={month} onChange={setMonth} />} />
+      <PageHeader title="المصروفات" actions={<><MonthBar month={month} onChange={setMonth} /><ExportButton fileName={`المصروفات-${month}`} rows={data || []} cols={[
+        { header: 'التاريخ', value: (x) => x.spent_at }, { header: 'البيان', value: (x) => x.description }, { header: 'التصنيف', value: (x) => x.category },
+        { header: 'المبلغ', value: (x) => Number(x.amount) }, { header: 'دفعها', value: (x) => (x.paid_by ? name[x.paid_by] : '') }, { header: 'ملاحظات', value: (x) => x.notes },
+      ]} /></>} />
       {perms.canAddExpense && (
         <Card title="إضافة مصروف">
           <form onSubmit={(e) => { e.preventDefault(); add.mutate(); }} className="grid grid-cols-1 gap-3 md:grid-cols-4">

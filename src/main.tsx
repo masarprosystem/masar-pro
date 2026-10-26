@@ -7,6 +7,11 @@ import { AuthProvider } from '@/core/auth';
 import { ToastProvider } from '@/core/toast';
 import './index.css';
 
+// تسطيب السيستم كتطبيق على الموبايل (في النسخة المنشورة بس)
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => undefined));
+}
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false, retry: 1 } },
 });

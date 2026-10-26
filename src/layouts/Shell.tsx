@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LogOut, Menu, X, type LucideIcon } from 'lucide-react';
+import { InstallApp } from '@/components/InstallApp';
 import { useAuth } from '@/core/auth';
 
 export interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean }
@@ -41,6 +42,7 @@ export function Shell({ groups, top, bottom, banner, children }: { groups: NavGr
         ))}
       </nav>
       <div className="space-y-2 border-t border-slate-100 p-3 dark:border-slate-800">
+        <InstallApp />
         {bottom}
         <div className="flex items-center justify-between gap-2 px-2">
           <p className="truncate text-xs text-slate-500" dir="ltr">{user?.email}</p>

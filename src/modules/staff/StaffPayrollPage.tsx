@@ -8,6 +8,7 @@ import { errorMessage } from '@/core/errors';
 import { ROLE_LABEL, fmtDate, money, ratio } from '@/core/format';
 import { useToast } from '@/core/toast';
 import { Badge, Button, Card, Empty, Field, Modal, PageHeader, Spinner, Stat, Table } from '@/components/ui';
+import { ExportButton } from '@/components/ExportButton';
 import { useMonth } from '@/modules/payroll/api';
 import { PAY_METHODS, monthLabel } from '@/modules/payroll/model';
 import { MonthBar, usePayers } from '@/modules/payroll/shared';
@@ -32,7 +33,15 @@ export function StaffPayrollPage() {
       <PageHeader
         title="مرتبات الموظفين"
         subtitle="الصافي = الثابت + العمولات + المكافآت − الخصومات − السلف − خصم الغياب والتأخير. لحد ما تصرف، الأرقام بتتحدث مع الحضور والتعيينات."
-        actions={<><MonthBar month={month} onChange={setMonth} />{canEdit && <Button variant="secondary" onClick={() => setAdj('')}><Plus className="h-4 w-4" /> مكافأة / خصم / سلفة</Button>}</>}
+        actions={<><MonthBar month={month} onChange={setMonth} /><ExportButton fileName={`مرتبات-الموظفين-${month}`} rows={rows} cols={[
+          { header: 'الموظف', value: (r) => r.full_name || r.email }, { header: 'الدور', value: (r) => ROLE_LABEL[r.role] }, { header: 'الثابت', value: (r) => Number((r.payslip || r).base_salary) },
+          { header: 'أيام الحضور', value: (r) => (r.payslip || r).present_days }, { header: 'أيام الشغل', value: (r) => (r.payslip || r).work_days }, { header: 'غياب', value: (r) => (r.payslip || r).absent_days },
+          { header: 'تأخير', value: (r) => (r.payslip || r).late_count }, { header: 'عدد العمولات', value: (r) => (r.payslip || r).commission_count },
+          { header: 'العمولات', value: (r) => Number((r.payslip || r).commission_amount) }, { header: 'مكافآت', value: (r) => Number((r.payslip || r).bonuses) },
+          { header: 'خصومات وسلف', value: (r) => Number((r.payslip || r).deductions) + Number((r.payslip || r).advances) },
+          { header: 'خصم غياب وتأخير', value: (r) => Number((r.payslip || r).absence_deduction) + Number((r.payslip || r).late_deduction) },
+          { header: 'الصافي', value: (r) => netOf(r) }, { header: 'الحالة', value: (r) => (r.payslip ? 'اتصرف' : 'لسه') },
+        ]} />{canEdit && <Button variant="secondary" onClick={() => setAdj('')}><Plus className="h-4 w-4" /> مكافأة / خصم / سلفة</Button>}</>}
       />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat tone="brand" label={`صافي مرتبات ${monthLabel(month)}`} value={money(rows.reduce((s, r) => s + netOf(r), 0))} sub={`${rows.length} موظف`} />

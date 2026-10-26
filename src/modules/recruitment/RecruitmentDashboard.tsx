@@ -5,6 +5,7 @@ import { useOffice } from '@/core/office';
 import { todayStr } from '@/core/format';
 import { useMembers } from '@/components/MembersManager';
 import { Button, Card, Empty, PageHeader, Spinner, Stat, Table } from '@/components/ui';
+import { ExportButton } from '@/components/ExportButton';
 import { useOverview } from './api';
 import { STAGES, STAGE_COLOR, STAGE_LABEL } from './model';
 
@@ -105,7 +106,11 @@ export function RecruitmentDashboard() {
             <Card title="مصدر المناديب"><Bars data={sorted(o.by_source)} /></Card>
           </div>
 
-          <Card title="أداء مسؤولي التعيين" className="overflow-hidden [&>div:last-child]:p-0">
+          <Card title="أداء مسؤولي التعيين" className="overflow-hidden [&>div:last-child]:p-0" actions={<ExportButton size="sm" fileName="أداء-مسؤولي-التعيين" rows={o.by_recruiter} cols={[
+            { header: 'المسؤول', value: (r) => (r.member_id && memberName[r.member_id]) || r.legacy || 'غير محدد' }, { header: 'سجّل', value: (r) => r.total },
+            { header: 'وصلوا التدريب', value: (r) => r.trained }, { header: 'بقوا نشطين', value: (r) => r.active }, { header: 'وقعوا بعد التدريب', value: (r) => r.dropped_after_training },
+            { header: 'نسبة التفعيل %', value: (r) => pct(r.active, r.total) },
+          ]} />}>
             <Table head={['المسؤول', 'سجّل', 'وصلوا التدريب', 'بقوا نشطين', 'وقعوا بعد التدريب', 'نسبة التفعيل']} empty={!o.by_recruiter.length && <Empty title="مفيش بيانات" />}>
               {o.by_recruiter.map((r, i) => (
                 <tr key={i}>

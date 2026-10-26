@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Briefcase, Construction, Lock, UserSearch, Wallet, type LucideIcon } from 'lucide-react';
 import { supabase } from '@/core/supabase';
+import { WA_DEFAULTS, WA_LABEL, WA_VARS, useOfficeSettings, type WaKey } from '@/core/whatsapp';
 import { useAuth } from '@/core/auth';
 import { useOffice } from '@/core/office';
 import { errorMessage } from '@/core/errors';
@@ -120,7 +121,46 @@ export function OfficeSettingsPage() {
           <Button type="submit" loading={mut.isPending} disabled={!writable || !form.name.trim()}>حفظ</Button>
         </form>
       </Card>
+      <WhatsAppTemplatesCard />
     </div>
+  );
+}
+
+function WhatsAppTemplatesCard() {
+  const { office, role, writable } = useOffice();
+  const canEdit = writable && role === 'owner';
+  const toast = useToast();
+  const qc = useQueryClient();
+  const { data: settings } = useOfficeSettings(office?.id);
+  const [t, setT] = useState<Record<WaKey, string>>(WA_DEFAULTS);
+  useEffect(() => { if (settings) setT({ ...WA_DEFAULTS, ...settings.wa_templates }); }, [settings]);
+  const save = useMutation({
+    mutationFn: async () => {
+      const custom = Object.fromEntries((Object.keys(t) as WaKey[]).filter((k) => t[k].trim() && t[k].trim() !== WA_DEFAULTS[k]).map((k) => [k, t[k].trim()]));
+      const { error } = await supabase.from('office_settings').upsert({
+        office_id: office!.id, apply_enabled: settings?.apply_enabled ?? false, apply_intro: settings?.apply_intro ?? null, wa_templates: custom, updated_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['office-settings'] }); toast('اتحفظت الرسائل.', 'success'); },
+    onError: (e) => toast(errorMessage(e), 'error'),
+  });
+  return (
+    <Card title="رسائل واتساب الجاهزة">
+      <div className="space-y-4">
+        {(Object.keys(WA_LABEL) as WaKey[]).map((k) => (
+          <Field key={k} label={WA_LABEL[k]} htmlFor={`wa_${k}`} hint={`المتغيرات: ${WA_VARS[k].join(' ')}`}>
+            <textarea id={`wa_${k}`} rows={k === 'payslip' ? 4 : 3} className="field" value={t[k]} disabled={!canEdit} onChange={(e) => setT({ ...t, [k]: e.target.value })} />
+          </Field>
+        ))}
+        {canEdit && (
+          <div className="flex gap-2">
+            <Button loading={save.isPending} onClick={() => save.mutate()}>حفظ الرسائل</Button>
+            <Button variant="ghost" onClick={() => setT(WA_DEFAULTS)}>رجوع للرسائل الأصلية</Button>
+          </div>
+        )}
+      </div>
+    </Card>
   );
 }
 
